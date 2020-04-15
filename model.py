@@ -1,5 +1,5 @@
 from datetime import datetime
-from server import db
+from app import db
 
 
 class User(db.Model):
@@ -14,7 +14,7 @@ class User(db.Model):
 class Event(db.Model):
     event_id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     event = db.Column(db.Integer, db.ForeignKey('eventtype.et_id'), nullable=False)
-    timestamp = db.Column(db.DateTime(128), index=True, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):

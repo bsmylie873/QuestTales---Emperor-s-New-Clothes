@@ -1,15 +1,16 @@
-from flask import Flask, render_template, request, jsonify, Response, session, flash
+from flask import Flask, render_template, request, redirect, jsonify, Response, session, flash
+from flask_wtf import Form
 from flask_cors import CORS
-from config import Config
+from qtdb_setup import init_db, db_session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from keyring import get_keyring, set_keyring
+from model import User, Event, EventType
+from form import UserSearchForm
+from tables import UserResults
+from app import app
 import os
 
-app = Flask(__name__)
-app.config.from_object(Config)
-db = SQLAlchemy(app)
-
+init_db()
 
 @app.route('/')
 def home():
@@ -30,12 +31,35 @@ def login():
     return home()
 
 
-@app.route('/overview')
+@app.route('/overview', methods=['GET', 'POST'])
 def overview():
     if not session.get('logged_in'):
         return render_template('login.html')
     else:
-        return render_template('overview.html')
+        Search = UserSearchForm(request.form)
+        if request.method == 'POST':
+            return search_results
+
+        return render_template('overview.html', form=Search)
+
+
+@app.route('/results')
+def search_results(search):
+    results = []
+    search_string = search.data['Search']
+
+    if search_string == '':
+        qry = app.query(User)
+        results = qry.all()
+
+    if not results:
+        flash('No results found!')
+        return redirect('/')
+    else:
+        # display results
+        table = UserResults(results)
+        table.border = True
+        return render_template('results.html', table=table)
 
 
 @app.route('/contact')
@@ -59,12 +83,12 @@ def faq():
     return render_template('faq.html')
 
 
-@app.route('/newuser')
-def newuser():
-    return render_template('faq.html')
+# @app.route('/newuser', methods=['GET', 'POST'])
+# def new_user():
+#     # form = UserForm(request.form)
+#     # #return render_template('newuser.html', form=form)
 
 
 if __name__ == '__main__':
-    app.secret_key = 'the most secret of keys'
     print(datetime.utcnow())
     app.run(host='0.0.0.0', port=6789, debug=True)
